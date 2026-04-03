@@ -8,5 +8,9 @@ const config: Knex.Config = {
     password: '12345678',
     database: 'postgres',
   },
+  migrations: {
+    directory: './migrations',
+    extension: 'ts',
+  },
 };
 export default config;
