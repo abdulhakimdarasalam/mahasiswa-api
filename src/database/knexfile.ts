@@ -5,8 +5,8 @@ const config: Knex.Config = {
   connection: {
     host: 'localhost',
     user: 'postgres',
-    password: 'password',
-    database: 'mahasiswa',
+    password: '12345678',
+    database: 'postgres',
   },
 };
 export default config;
