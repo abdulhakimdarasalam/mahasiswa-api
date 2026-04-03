@@ -36,4 +36,56 @@ export class UsersService {
       register_date: user.register_date,
     };
   }
+
+  async findAll(): Promise<UserResponseDto[]> {
+    const users = await this.knexService
+      .connection('users')
+      .select('*')
+      .where({ is_active: true });
+    return users.map(this.mapToResponseDto);
+  }
+
+  async findById(id: number): Promise<UserResponseDto> {
+    const [user] = await this.knexService
+      .connection('users')
+      .where({ id })
+      .select('*')
+      .where({ is_active: true });
+    return this.mapToResponseDto(user);
+  }
+
+  async findByEmail(email: string): Promise<UserResponseDto> {
+    const [user] = await this.knexService
+      .connection('users')
+      .where({ email })
+      .select('*')
+      .where({ is_active: true });
+    return this.mapToResponseDto(user);
+  }
+
+  async update(
+    id: number,
+    updateUserDto: Partial<CreateUserDto>,
+  ): Promise<UserResponseDto> {
+    const { email, name, password, is_active } = updateUserDto;
+    const hashedPassword = await bcrypt.hash(password as string, 10);
+    const [user] = await this.knexService
+      .connection('users')
+      .where({ id })
+      .update({
+        email: email,
+        name: name,
+        password: hashedPassword,
+        is_active: is_active,
+      })
+      .returning('*');
+    return this.mapToResponseDto(user);
+  }
+
+  async delete(id: number): Promise<void> {
+    await this.knexService
+      .connection('users')
+      .where({ id })
+      .update({ is_active: false });
+  }
 }
