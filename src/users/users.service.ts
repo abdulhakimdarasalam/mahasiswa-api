@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { KnexService } from '../database/knex.service';
@@ -8,24 +8,41 @@ import * as bcrypt from 'bcrypt';
 export class UsersService {
   constructor(private readonly knexService: KnexService) {}
 
+  private isEmailUniqueViolation(error: unknown): boolean {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code?: string }).code === '23505'
+    );
+  }
+
+  private normalizeEmail(email: string): string {
+    return email.trim().toLowerCase();
+  }
+
   async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
-    const { email, name, password, is_active, register_date } = createUserDto;
-
-    const hashedPassword = await bcrypt.hash(password as string, 10);
-
-    const [user] = await this.knexService
-      .connection('users')
-      .insert({
-        email,
-        name,
-        password: hashedPassword,
-        is_active: is_active ?? true,
-        register_date: register_date ?? new Date(),
-      })
-      .returning('*');
-
-    // Remove password from response
-    return this.mapToResponseDto(user);
+    try {
+      const { email, name, password } = createUserDto;
+      const normalizedEmail = this.normalizeEmail(email);
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const [user] = await this.knexService
+        .connection('users')
+        .insert({
+          email: normalizedEmail,
+          name,
+          password: hashedPassword,
+          is_active: true,
+          register_date: new Date(),
+        })
+        .returning('*');
+      return this.mapToResponseDto(user);
+    } catch (error) {
+      if (this.isEmailUniqueViolation(error)) {
+        throw new ConflictException('Email already used');
+      }
+      throw error;
+    }
   }
   private mapToResponseDto(user: any): UserResponseDto {
     return {
@@ -67,19 +84,26 @@ export class UsersService {
     id: number,
     updateUserDto: Partial<CreateUserDto>,
   ): Promise<UserResponseDto> {
-    const { email, name, password, is_active } = updateUserDto;
-    const hashedPassword = await bcrypt.hash(password as string, 10);
-    const [user] = await this.knexService
-      .connection('users')
-      .where({ id })
-      .update({
-        email: email,
-        name: name,
-        password: hashedPassword,
-        is_active: is_active,
-      })
-      .returning('*');
-    return this.mapToResponseDto(user);
+    try {
+      const { email, name, password, is_active } = updateUserDto;
+      const hashedPassword = await bcrypt.hash(password as string, 10);
+      const [user] = await this.knexService
+        .connection('users')
+        .where({ id })
+        .update({
+          email: email,
+          name: name,
+          password: hashedPassword,
+          is_active: is_active,
+        })
+        .returning('*');
+      return this.mapToResponseDto(user);
+    } catch (error) {
+      if (this.isEmailUniqueViolation(error)) {
+        throw new ConflictException('Email already used');
+      }
+      throw error;
+    }
   }
 
   async delete(id: number): Promise<void> {
