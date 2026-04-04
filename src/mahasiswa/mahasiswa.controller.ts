@@ -9,10 +9,11 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { MahasiswaService } from './mahasiswa.service';
 import { CreateMahasiswaDto } from './dto/create-mahasiswa.dto';
-import { MahasiswaResponseDto } from './dto/mahasiswa-response.dto';
+import { QueryMahasiswaDto } from './dto/query-mahasiswa.dto';
 import {
   ApiTags,
   ApiOperation,
@@ -47,9 +48,11 @@ export class MahasiswaController {
   @ApiCreatedResponse({ description: 'Mahasiswa created successfully' })
   @ApiBadRequestResponse({ description: 'Bad Request' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
-  @ApiOperation({ summary: 'Get all Mahasiswa' })
-  async findAll() {
-    return this.mahasiswaService.findAll();
+  @ApiOperation({
+    summary: 'Get all Mahasiswa with pagination and dynamic search',
+  })
+  async findAll(@Query() query: QueryMahasiswaDto) {
+    return this.mahasiswaService.findAll(query);
   }
 
   @Put(':id')

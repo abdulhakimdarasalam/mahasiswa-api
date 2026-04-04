@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { KnexService } from '../database/knex.service';
 import { CreateMahasiswaDto } from './dto/create-mahasiswa.dto';
+import { MahasiswaListResponseDto } from './dto/mahasiswa-list-response.dto';
 import { MahasiswaResponseDto } from './dto/mahasiswa-response.dto';
+import { QueryMahasiswaDto } from './dto/query-mahasiswa.dto';
 
 @Injectable()
 export class MahasiswaService {
@@ -44,12 +46,47 @@ export class MahasiswaService {
     }
   }
 
-  async findAll(): Promise<MahasiswaResponseDto[]> {
-    const mahasiswa = await this.knex
+  async findAll(query: QueryMahasiswaDto): Promise<MahasiswaListResponseDto> {
+    const page = query.page || 1;
+    const limit = query.limit || 10;
+    const offset = (page - 1) * limit;
+
+    const baseQuery = this.knex
       .connection('data_mhs')
-      .select('*')
       .where({ is_active: true });
-    return mahasiswa.map(this.mapToMahasiswaResponseDto);
+
+    if (query.column && query.search) {
+      if (
+        query.column === 'nim' ||
+        query.column === 'nama' ||
+        query.column === 'email'
+      ) {
+        baseQuery.andWhere(query.column, 'ilike', `%${query.search}%`);
+      } else {
+        baseQuery.andWhere(query.column, 'ilike', `%${query.search}%`);
+      }
+    }
+
+    const countResult = await baseQuery
+      .clone()
+      .count<{ count: string }[]>('* as count');
+    const total = Number(countResult[0]?.count ?? 0);
+
+    const rows = await baseQuery
+      .clone()
+      .select('*')
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      data: rows.map(this.mapToMahasiswaResponseDto),
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async update(
