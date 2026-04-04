@@ -39,7 +39,7 @@ export class UsersService {
       return this.mapToResponseDto(user);
     } catch (error) {
       if (this.isEmailUniqueViolation(error)) {
-        throw new ConflictException('Email already used');
+        throw new ConflictException('Email already exist');
       }
       throw error;
     }
@@ -100,7 +100,7 @@ export class UsersService {
       return this.mapToResponseDto(user);
     } catch (error) {
       if (this.isEmailUniqueViolation(error)) {
-        throw new ConflictException('Email already used');
+        throw new ConflictException('Email already exist');
       }
       throw error;
     }
