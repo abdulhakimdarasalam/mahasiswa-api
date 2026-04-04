@@ -13,6 +13,7 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "db:migrate": "node --loader ts-node/esm ./node_modules/knex/bin/cli.js --knexfile ./src/database/knexfile.ts migrate:latest",
+    "db:migrate:make": "node --loader ts-node/esm ./node_modules/knex/bin/cli.js --knexfile ./src/database/knexfile.ts migrate:make",
     "db:migrate:rollback": "node --loader ts-node/esm ./node_modules/knex/bin/cli.js --knexfile ./src/database/knexfile.ts migrate:rollback",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
