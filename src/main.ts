@@ -18,6 +18,15 @@ async function bootstrap() {
     .setTitle('Mahasiswa API')
     .setDescription('API documentation for mahasiswa-api service')
     .setVersion('1.0.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'Enter JWT token to access protected endpoints',
+      },
+      'access-token',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
